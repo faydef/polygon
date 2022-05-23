@@ -80,7 +80,7 @@ app.get(`/post/:id`, async (req, res) => {
     where: {
       id: Number(id),
     },
-    include: { author: true }
+    include: { author: true, comments: { include: { author: { select: { name: true } } } } }
   })
   res.json(post)
 })
@@ -102,6 +102,71 @@ app.post(`/user`, async (req, res) => {
   })
   res.json(result)
 })
+
+app.get('/comments', async (req, res) => {
+  const comments = await prisma.comment.findMany()
+  res.json(comments)
+})
+
+app.get(`/comment/:authorid/:postId`, async (req, res) => {
+  const id1 = req.params.authorid
+  const id2 = req.params.postId
+  const comments = await prisma.comment.findMany({
+    where: {
+      AND: [
+        {
+          postId: Number(id2),
+        },
+        {
+          authorId: Number(id1)
+        },
+      ],
+    },
+  })
+  res.json(comments)
+})
+
+app.get(`/commentByPost/:postId`, async (req, res) => {
+  const id = req.params.postId
+  const comments = await prisma.comment.findMany({
+    where: {
+      postId: Number(id),
+    },
+  })
+  res.json(comments)
+})
+
+app.get(`/commentByAuthor/:authorId`, async (req, res) => {
+  const id = req.params.authorId
+  const comments = await prisma.comment.findMany({
+    where: {
+      postId: Number(id),
+    },
+  })
+  res.json(comments)
+})
+
+app.post(`/comment`, async (req, res) => {
+  const { id, content, authorEmail } = req.body
+  const user = await prisma.user.findUnique({ where: { email: authorEmail } })
+  const post = await prisma.post.findUnique({ where: { id: Number(id) } })
+  if (user !== null) {
+    const result = await prisma.comment.create({
+      data: {
+        content,
+        author: { connect: { email: authorEmail } },
+        post: { connect: { id: Number(id) } }
+      },
+    })
+    res.json(result)
+  }
+  else {
+    res.status(404).json('user does not exist')
+  }
+})
+
+
+
 
 const server = app.listen(3001, () =>
   console.log(
