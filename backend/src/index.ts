@@ -47,15 +47,21 @@ app.get('/filterPosts', async (req, res) => {
 
 app.post(`/post`, async (req, res) => {
   const { title, content, authorEmail } = req.body
-  const result = await prisma.post.create({
-    data: {
-      title,
-      content,
-      published: false,
-      author: { connect: { email: authorEmail } },
-    },
-  })
-  res.json(result)
+  const user = await prisma.user.findUnique({ where: { email: authorEmail } })
+  if (user !== null) {
+    const result = await prisma.post.create({
+      data: {
+        title,
+        content,
+        published: false,
+        author: { connect: { email: authorEmail } },
+      },
+    })
+    res.json(result)
+  }
+  else {
+    res.status(404).json('user does not exist')
+  }
 })
 
 app.delete(`/post/:id`, async (req, res) => {

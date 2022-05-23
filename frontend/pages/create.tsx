@@ -2,10 +2,12 @@ import React, { useState } from 'react'
 import Layout from '../components/Layout'
 import Router from 'next/router'
 
+
 const Draft: React.FC = () => {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [authorEmail, setAuthorEmail] = useState('')
+  var status = 0
 
   const submitData = async (e: React.SyntheticEvent) => {
     e.preventDefault()
@@ -15,8 +17,14 @@ const Draft: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      })
-      await Router.push('/drafts')
+      }).then(response => status = response.status)
+      .catch(error => console.log(error))
+      if (status == 404){
+        Router.push('/signup')
+      }
+      else {
+        Router.push('/drafts')
+      }
     } catch (error) {
       console.error(error)
     }
