@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { GetServerSideProps } from 'next'
 import ReactMarkdown from 'react-markdown'
 import Layout from '../../components/Layout'
@@ -16,6 +16,7 @@ export type PostProps = {
   comments : [{author : {name:string};
   content:string;
 id:number}]
+  typing: boolean;
 }
 
 async function publish(id: number): Promise<void> {
@@ -32,20 +33,31 @@ async function destroy(id: number): Promise<void> {
   await Router.push('/')
 }
 
+async function writing(id: number, truth:string): Promise<void> {
+  await fetch(`http://localhost:3001/writing/${id}/`+truth, {
+    method: 'PUT',
+  })
+}
+
 const Post: React.FC<PostProps> = props => {
-  let comments = props.comments
   let title = props.title
   if (!props.published) {
     title = `${title} (Draft)`
   }
-  const [id, setId] = useState(''+props.id)
-  const [content, setContent] = useState('')
+  const id = props.id
+  const [content, setContent] = useState(null)
   const [authorEmail, setAuthorEmail] = useState('')
+  const [typing, setTyping] = useState(false)
+  const typingdb = props.typing?props.typing:false
+  const isMounted = useRef(false);
   var status = 0
 
   const submitData = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     try {
+      await fetch(`http://localhost:3001/publish/${id}`, {
+      method: 'PUT',
+      })
       const body = { id, content, authorEmail }
       await fetch(`http://localhost:3001/comment`, {
         method: 'POST',
@@ -63,6 +75,18 @@ const Post: React.FC<PostProps> = props => {
       console.error(error)
     }
   }
+  useEffect(() => {
+    if (isMounted.current) {
+      setTyping(content!=='' && content!== null)
+    }
+}, [content]);
+  useEffect(() => {
+    if (isMounted.current) {
+      writing(props.id, typing.toString())
+    } else {
+      isMounted.current = true;
+    }
+  }, [typing]);
 
   return (
     <Layout>
@@ -83,6 +107,7 @@ const Post: React.FC<PostProps> = props => {
         <form
           onSubmit={submitData}>
           <h1>Comment on this post</h1>
+          {(typing ||typingdb)  && <p>someone is typing</p>}
           <input
             onChange={e => setAuthorEmail(e.target.value)}
             placeholder="Author (email address)"
@@ -91,7 +116,8 @@ const Post: React.FC<PostProps> = props => {
           />
           <textarea
             cols={50}
-            onChange={e => setContent(e.target.value)}
+            onChange={e => {setContent(e.target.value)
+            setTyping(content!=='')}}
             placeholder="Content"
             rows={8}
             value={content}

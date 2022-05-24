@@ -12,6 +12,7 @@ const userData: Prisma.UserCreateInput[] = [
           title: 'Join the Prisma Slack',
           content: 'https://slack.prisma.io',
           published: true,
+          typing: false,
         },
       ],
     },

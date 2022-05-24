@@ -165,6 +165,16 @@ app.post(`/comment`, async (req, res) => {
   }
 })
 
+app.put('/writing/:id/:truth', async (req, res) => {
+  const { id, truth } = req.params
+  const typing = truth === 'true'
+  const post = await prisma.post.update({
+    where: { id: Number(id) },
+    data: { typing: typing },
+  })
+  res.json(post)
+})
+
 
 
 
