@@ -175,6 +175,17 @@ app.put('/writing/:id/:truth', async (req, res) => {
   res.json(post)
 })
 
+app.get(`/writing/:id`, async (req, res) => {
+  const { id } = req.params
+  const post = await prisma.post.findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: { typing: true }
+  })
+  res.json(post)
+})
+
 
 
 

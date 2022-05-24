@@ -39,6 +39,12 @@ async function writing(id: number, truth:string): Promise<void> {
   })
 }
 
+async function getProps(id:number) {
+  const res = await fetch(`http://localhost:3001/post/${id}`)
+  const data = await res.json()
+  return { props: { ...data } }
+}
+
 const Post: React.FC<PostProps> = props => {
   let title = props.title
   if (!props.published) {
@@ -48,7 +54,7 @@ const Post: React.FC<PostProps> = props => {
   const [content, setContent] = useState(null)
   const [authorEmail, setAuthorEmail] = useState('')
   const [typing, setTyping] = useState(false)
-  const typingdb = props.typing?props.typing:false
+  const [typingdb, setTypingdb] = useState(props.typing?props.typing:false)
   const isMounted = useRef(false);
   var status = 0
 
@@ -75,6 +81,18 @@ const Post: React.FC<PostProps> = props => {
       console.error(error)
     }
   }
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch(`http://localhost:3001/writing/${props.id}`);
+      const json = await res.json();
+      setTypingdb(json.typing)
+    }
+    const interval = setInterval(() => {
+      fetchData()
+      .catch(console.error);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [])
   useEffect(() => {
     if (isMounted.current) {
       setTyping(content!=='' && content!== null)
